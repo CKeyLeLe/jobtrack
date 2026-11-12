@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Stage 1: build the jar with the full JDK and Maven ----
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 WORKDIR /workspace
 
 # Dependencies first: this layer is cached and only rebuilt when pom.xml changes.
@@ -16,7 +16,7 @@ RUN ./mvnw -B -q package -DskipTests \
     && java -Djarmode=tools -jar target/jobtrack-backend-*.jar extract --layers --launcher --destination target/extracted
 
 # ---- Stage 2: minimal runtime image (JRE only, no build tools, no sources) ----
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 RUN addgroup -S jobtrack && adduser -S jobtrack -G jobtrack
 WORKDIR /app
 
