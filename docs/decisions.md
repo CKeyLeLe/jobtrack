@@ -61,3 +61,24 @@ Short record of the main technical choices and their trade-offs.
   `DELETE` → 204.
 - **Test pyramid**: Mockito unit tests (service), `@WebMvcTest` slice tests
   (HTTP contract), one `@SpringBootTest` integration test (full stack on H2).
+
+## 4. Error handling
+
+- **One `@RestControllerAdvice`** (`GlobalExceptionHandler`) translates every
+  exception into an HTTP response. Controllers and services never build error
+  responses themselves; business exceptions (`NotFoundException`) know nothing
+  about HTTP.
+- **RFC 7807 Problem Details** (`application/problem+json`): a standard format
+  (`type`, `title`, `status`, `detail`, `instance`) supported natively by
+  Spring's `ProblemDetail`. Every error has the same shape, so the frontend
+  needs a single error interceptor.
+- **Extending `ResponseEntityExceptionHandler`** covers framework errors
+  (malformed JSON, wrong parameter type, unsupported method, unknown route,
+  `ResponseStatusException`) with the same format, for free.
+- **Validation errors list each field** (`errors: [{field, message}]`, sorted)
+  so a form can show the message under the right input.
+- **Cross-field rule as a custom class-level constraint**
+  (`@FollowUpNotBeforeApplication`) that attaches the error to `followUpOn`
+  instead of the whole object.
+- **Catch-all 500 handler**: logs the stack trace, returns a generic message.
+  Internal details (SQL, class names) never reach the client.

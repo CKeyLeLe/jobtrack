@@ -22,7 +22,7 @@ follow-up reminders and notes.
 - [x] 1. Project skeleton: Spring Boot API, PostgreSQL via Docker Compose
 - [x] 2. Domain model: `User` and `JobApplication` entities, Flyway migrations
 - [x] 3. Applications CRUD: controller / service / repository layers, DTOs, validation
-- [ ] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
+- [x] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
 - [ ] 5. Status filter and follow-ups list
 - [ ] 6. Security: registration, login, JWT, per-user data isolation
 - [ ] 7. Unit tests (Mockito) and web tests (MockMvc)
@@ -64,6 +64,23 @@ cd backend
 
 > Until authentication is implemented (step 6), the caller is identified by a
 > temporary `X-User-Id` header.
+
+Errors follow [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807)
+(`application/problem+json`). Validation errors list each invalid field:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Validation failed",
+  "status": 400,
+  "detail": "One or more fields are invalid.",
+  "instance": "/api/applications",
+  "errors": [
+    { "field": "company", "message": "must not be blank" },
+    { "field": "followUpOn", "message": "must not be before appliedOn" }
+  ]
+}
+```
 
 ## Troubleshooting
 
