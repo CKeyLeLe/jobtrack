@@ -9,8 +9,8 @@ Short record of the main technical choices and their trade-offs.
   3.5 was chosen deliberately as the version most teams run today.
 - **Configuration through environment variables** with local defaults
   (`${DB_URL:...}`): the same artifact runs locally, in Docker and in production.
-- **Tests on H2 (PostgreSQL mode)**: fast and Docker-free. Trade-off: H2 is not
-  PostgreSQL, so the schema is also verified against a real PostgreSQL.
+- **Tests on H2 (PostgreSQL mode)** at first: fast and Docker-free, but H2 is
+  not PostgreSQL. Replaced by Testcontainers in step 7.
 
 ## 2. Domain model and schema
 
@@ -139,3 +139,24 @@ Short record of the main technical choices and their trade-offs.
 - **Known limits** (out of scope for V1): no refresh token (one-hour expiry,
   then log in again), no server-side logout or revocation (the client drops
   the token), no rate limiting on login.
+
+## 7. Test hardening
+
+- **Database tests on real PostgreSQL with Testcontainers**, H2 removed: tests
+  run on the production engine and version (`postgres:17-alpine`), so SQL,
+  constraints and types behave exactly as in production. Cost: Docker is
+  required and the first run pulls the image.
+- **`@ServiceConnection`**: Spring Boot reads the container's URL and
+  credentials itself; no datasource properties in the test profile.
+- **Meta-annotations `@IntegrationTest` and `@RepositoryTest`**: one place for
+  the configuration, and identical configurations let Spring reuse one cached
+  context (and one container) across test classes: 2 containers for the
+  whole suite.
+- **Database-only rules are tested**: the `CHECK` constraint on `status` is
+  verified with raw SQL that bypasses Java validation.
+- **JaCoCo coverage gate** (`mvnw verify` fails below 90% of lines). Coverage
+  is a tool to find untested behaviour, not a goal: reading the report showed
+  that `GET /{id}` and a successful `PUT` were never called over HTTP, which
+  led to a lifecycle test. The remaining uncovered lines are defensive code.
+- **Mockito loaded as a Java agent** through Surefire: recent JDKs are phasing
+  out dynamic agent self-attachment, which Mockito relied on.

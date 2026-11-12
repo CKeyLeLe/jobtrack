@@ -12,9 +12,9 @@ follow-up reminders and notes.
 |------------|--------------------------------------------------------|
 | Backend    | Java 21, Spring Boot 3.5, Maven, Spring Data JPA       |
 | Security   | Spring Security, stateless JWT authentication          |
-| Database   | PostgreSQL 17 (Docker), H2 for tests                   |
+| Database   | PostgreSQL 17 (Docker), Flyway migrations              |
 | Frontend   | Angular                                                |
-| Tests      | JUnit 5, Mockito, MockMvc                              |
+| Tests      | JUnit 5, Mockito, MockMvc, Testcontainers, JaCoCo      |
 | DevOps     | Docker Compose, GitHub Actions                         |
 
 ## Roadmap
@@ -25,7 +25,7 @@ follow-up reminders and notes.
 - [x] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
 - [x] 5. Status filter and follow-ups list
 - [x] 6. Security: registration, login, JWT, per-user data isolation
-- [ ] 7. Test hardening: tests on real PostgreSQL (Testcontainers), JaCoCo coverage
+- [x] 7. Test hardening: tests on real PostgreSQL (Testcontainers), JaCoCo coverage
 - [ ] 8. Angular frontend
 - [ ] 9. Full Docker Compose stack
 - [ ] 10. CI with GitHub Actions
@@ -49,12 +49,23 @@ The API refuses to start without `JWT_SECRET`. In production, provide it (and
 
 Health check: `http://localhost:8080/actuator/health`
 
-Run the tests (no Docker needed, they use an in-memory H2 database):
+Run the tests and the coverage check (Docker must be running: database tests
+start a throwaway PostgreSQL container with Testcontainers):
 
 ```bash
 cd backend
-./mvnw test
+./mvnw verify
 ```
+
+The coverage report is written to `backend/target/site/jacoco/index.html`;
+the build fails below 90% line coverage.
+
+| Test type          | Tools                        | Scope                                   |
+|--------------------|------------------------------|-----------------------------------------|
+| Unit               | JUnit 5, Mockito             | Services and validators, no Spring      |
+| Web slice          | `@WebMvcTest`, MockMvc       | HTTP contract, validation, error format |
+| Repository         | `@DataJpaTest`, PostgreSQL   | Queries, constraints, mappings          |
+| Integration        | `@SpringBootTest`, PostgreSQL| Full stack including JWT security       |
 
 ## API
 
