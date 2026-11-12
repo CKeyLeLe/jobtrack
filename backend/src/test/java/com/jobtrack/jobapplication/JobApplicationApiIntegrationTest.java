@@ -1,13 +1,12 @@
 package com.jobtrack.jobapplication;
 
+import com.jobtrack.support.IntegrationTest;
 import com.jobtrack.auth.TokenService;
 import com.jobtrack.user.User;
 import com.jobtrack.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -15,14 +14,13 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -30,13 +28,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Test d'intégration : toute l'application (sécurité JWT → controller → service → repository → H2).
- * @Transactional annule les données à la fin de chaque test.
+ * Test d'intégration : toute l'application (sécurité JWT → controller → service → repository → PostgreSQL).
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@Transactional
+@IntegrationTest
 class JobApplicationApiIntegrationTest {
 
     private static final String NEW_APPLICATION = """
@@ -77,6 +71,34 @@ class JobApplicationApiIntegrationTest {
 
         mvc.perform(get("/api/applications").header(HttpHeaders.AUTHORIZATION, bobToken))
                 .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    /** Cycle de vie complet d'une ressource : création, lecture, modification, suppression. */
+    @Test
+    void applicationLifecycle() throws Exception {
+        String location = mvc.perform(post("/api/applications").header(HttpHeaders.AUTHORIZATION, aliceToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(NEW_APPLICATION))
+                .andReturn().getResponse().getHeader("Location");
+
+        mvc.perform(get(location).header(HttpHeaders.AUTHORIZATION, aliceToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPLIED"));
+
+        mvc.perform(put(location).header(HttpHeaders.AUTHORIZATION, aliceToken)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"company": "Acme", "jobTitle": "Java Developer", "status": "INTERVIEW",
+                                 "appliedOn": "2026-11-02", "followUpOn": "2026-11-20", "notes": "Call on Monday"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("INTERVIEW"))
+                .andExpect(jsonPath("$.followUpOn").value("2026-11-20"))
+                .andExpect(jsonPath("$.notes").value("Call on Monday"));
+
+        mvc.perform(delete(location).header(HttpHeaders.AUTHORIZATION, aliceToken))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get(location).header(HttpHeaders.AUTHORIZATION, aliceToken))
+                .andExpect(status().isNotFound());
     }
 
     @Test

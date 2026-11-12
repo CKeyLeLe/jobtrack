@@ -1,23 +1,18 @@
 package com.jobtrack.user;
 
+import com.jobtrack.support.RepositoryTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * @DataJpaTest ne démarre que la couche persistance (JPA, Flyway, repositories) :
- * plus rapide qu'un @SpringBootTest complet. Chaque test est annulé (rollback) à la fin.
- * replace = NONE : on garde notre H2 configurée en mode PostgreSQL au lieu de la base par défaut.
+ * Test de repository (voir {@link RepositoryTest}) : seule la couche persistance démarre,
+ * sur PostgreSQL. Plus rapide qu'un @SpringBootTest complet.
  */
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ActiveProfiles("test")
+@RepositoryTest
 class UserRepositoryTest {
 
     @Autowired

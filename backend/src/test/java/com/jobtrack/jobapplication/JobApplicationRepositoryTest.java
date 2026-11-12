@@ -1,21 +1,20 @@
 package com.jobtrack.jobapplication;
 
+import com.jobtrack.support.RepositoryTest;
 import com.jobtrack.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ActiveProfiles("test")
+@RepositoryTest
 class JobApplicationRepositoryTest {
 
     @Autowired
@@ -25,6 +24,9 @@ class JobApplicationRepositoryTest {
     @Autowired
     private TestEntityManager em;
 
+    @Autowired
+    private JdbcTemplate jdbc;
+
     private User alice;
     private User bob;
 
@@ -32,6 +34,21 @@ class JobApplicationRepositoryTest {
     void setUp() {
         alice = em.persist(new User("alice@example.com", "hash"));
         bob = em.persist(new User("bob@example.com", "hash"));
+    }
+
+    /**
+     * La contrainte CHECK de la migration V2 est le dernier rempart si du SQL écrit à la main
+     * (script, autre application) contournait la validation Java.
+     */
+    @Test
+    void databaseRejectsAnUnknownStatus() {
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into job_applications
+                    (user_id, company, job_title, status, applied_on, created_at, updated_at)
+                values (?, 'Acme', 'Dev', 'HIRED', current_date, now(), now())
+                """, alice.getId()))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_job_applications_status");
     }
 
     @Test
