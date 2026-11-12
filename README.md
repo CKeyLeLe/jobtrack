@@ -6,6 +6,22 @@ follow-up reminders and notes.
 > Portfolio project, built step by step during the *Concepteur Développeur
 > d'Applications* training (ENI).
 
+![Applications list](docs/screenshots/applications.jpg)
+
+| Follow-ups due today or overdue | Form validation |
+|---|---|
+| ![Follow-ups](docs/screenshots/follow-ups.jpg) | ![Form validation](docs/screenshots/form-validation.jpg) |
+
+## Features
+
+- Account registration and login (JWT), each user only sees their own data
+- Create, edit and delete job applications: company, position, status,
+  application date, follow-up date, notes
+- Filter by status (the filter is kept in the URL)
+- Follow-ups screen: active applications whose follow-up date has come,
+  most overdue first, with *Done* and *Snooze 7 days* actions
+- Responsive layout, light and dark themes
+
 ## Stack
 
 | Layer      | Technology                                             |
@@ -13,8 +29,8 @@ follow-up reminders and notes.
 | Backend    | Java 21, Spring Boot 3.5, Maven, Spring Data JPA       |
 | Security   | Spring Security, stateless JWT authentication          |
 | Database   | PostgreSQL 17 (Docker), Flyway migrations              |
-| Frontend   | Angular                                                |
-| Tests      | JUnit 5, Mockito, MockMvc, Testcontainers, JaCoCo      |
+| Frontend   | Angular 22 (standalone, signals), reactive forms       |
+| Tests      | JUnit 5, Mockito, MockMvc, Testcontainers, JaCoCo, Vitest |
 | DevOps     | Docker Compose, GitHub Actions                         |
 
 ## Roadmap
@@ -26,7 +42,7 @@ follow-up reminders and notes.
 - [x] 5. Status filter and follow-ups list
 - [x] 6. Security: registration, login, JWT, per-user data isolation
 - [x] 7. Test hardening: tests on real PostgreSQL (Testcontainers), JaCoCo coverage
-- [ ] 8. Angular frontend
+- [x] 8. Angular frontend
 - [ ] 9. Full Docker Compose stack
 - [ ] 10. CI with GitHub Actions
 
@@ -34,14 +50,22 @@ Design choices and trade-offs are recorded in [docs/decisions.md](docs/decisions
 
 ## Run locally
 
-Requirements: JDK 21+, Docker. Maven does not need to be installed: the project
-ships the Maven Wrapper (`mvnw`).
+Requirements: JDK 21+, Node.js 22+, Docker. Maven does not need to be installed:
+the project ships the Maven Wrapper (`mvnw`).
 
 ```bash
 docker compose up -d          # start PostgreSQL
 cd backend
 cp .env.example .env          # then set JWT_SECRET (openssl rand -base64 32)
 ./mvnw spring-boot:run        # start the API on http://localhost:8080
+```
+
+In a second terminal:
+
+```bash
+cd frontend
+npm install
+npm start                     # open http://localhost:4200
 ```
 
 The API refuses to start without `JWT_SECRET`. In production, provide it (and

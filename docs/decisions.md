@@ -160,3 +160,43 @@ Short record of the main technical choices and their trade-offs.
   led to a lifecycle test. The remaining uncovered lines are defensive code.
 - **Mockito loaded as a Java agent** through Surefire: recent JDKs are phasing
   out dynamic agent self-attachment, which Mockito relied on.
+
+## 8. Angular frontend
+
+- **Angular 22 defaults**: standalone components (no NgModule), signals for
+  state, zoneless change detection, built-in control flow (`@if`, `@for`).
+  Component state read by templates is held in signals, so the view updates
+  exactly when the data changes.
+- **Same origin instead of CORS**: the dev server proxies `/api` to the
+  backend (`proxy.conf.json`). The browser only talks to one origin, so the
+  API needs no CORS configuration; in production a reverse proxy will do the
+  same (step 9).
+- **Feature folders** (`core`, `auth`, `applications`) mirroring the backend's
+  package-by-feature layout.
+- **One interceptor for the token**, added only to relative `/api/` URLs so it
+  never leaks to another host. A 401 on an authenticated call ends the session
+  and redirects to the login page with an explanation.
+- **Guards are UX, not security**: they avoid showing pages the user cannot
+  use; the API enforces authentication on every call.
+- **Token in `localStorage`**: survives a page refresh. Trade-off: readable by
+  a script injected through an XSS flaw. Mitigations: Angular escapes
+  interpolated values, no `innerHTML`, one-hour expiry, token only sent to our
+  API. The safer alternative, an `HttpOnly` cookie, needs CSRF protection on
+  the backend again; documented as a possible evolution.
+- **One error translator** (`toApiError`): turns RFC 7807 responses into a
+  message plus per-field messages; server field errors are set on the form
+  controls and displayed exactly like client-side errors.
+- **Client validation mirrors the backend rules** for instant feedback; the
+  backend remains the authority.
+- **Typed reactive forms**, one component for create and edit.
+- **State in the URL**: the status filter is a query parameter
+  (`?status=INTERVIEW`) bound to a component input, so it can be bookmarked
+  and survives refresh and back navigation.
+- **Lazy-loaded pages** (`loadComponent`): about 78 kB transferred on first
+  load, each page downloaded on first visit.
+- **Plain CSS with variables**, no UI library: small bundle, light and dark
+  themes, table rows turn into cards on phones.
+- **Tests on logic, not markup**: interceptor, session store, error mapping,
+  validators and date helpers (Vitest). The full flow was checked manually in
+  a browser against the real API; automated end-to-end tests (Playwright)
+  are a possible next step.
