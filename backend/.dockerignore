@@ -1,0 +1,8 @@
+# Only what the build needs is sent to Docker. Above all, the local .env
+# (JWT secret) must never end up inside an image.
+.env
+target/
+.idea/
+*.iml
+.vscode/
+*.log

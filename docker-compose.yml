@@ -1,5 +1,8 @@
-# Étape 1 : uniquement la base de données, pour développer l'API en local.
-# Le backend et le frontend seront ajoutés ici dans une étape ultérieure.
+# Full stack:   docker compose up -d --build   → http://localhost:8000
+# Database only (to run the API and Angular from the IDE):   docker compose up -d db
+#
+# Network: only nginx (frontend) is published. The API is reachable only through
+# nginx, and PostgreSQL only from this machine (127.0.0.1).
 services:
   db:
     image: postgres:17-alpine
@@ -9,7 +12,7 @@ services:
       POSTGRES_USER: jobtrack
       POSTGRES_PASSWORD: jobtrack
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - jobtrack-data:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +20,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    image: jobtrack-backend
+    container_name: jobtrack-backend
+    # Same secret file as local development (git-ignored, see backend/.env.example).
+    env_file: ./backend/.env
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/jobtrack
+      DB_USERNAME: jobtrack
+      DB_PASSWORD: jobtrack
+    depends_on:
+      db:
+        condition: service_healthy # wait until PostgreSQL accepts connections
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    image: jobtrack-frontend
+    container_name: jobtrack-frontend
+    ports:
+      - "${APP_PORT:-8000}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy # the Dockerfile HEALTHCHECK polls /actuator/health
+    restart: unless-stopped
 
 volumes:
   jobtrack-data:
