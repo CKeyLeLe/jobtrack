@@ -21,7 +21,7 @@ follow-up reminders and notes.
 
 - [x] 1. Project skeleton: Spring Boot API, PostgreSQL via Docker Compose
 - [x] 2. Domain model: `User` and `JobApplication` entities, Flyway migrations
-- [ ] 3. Applications CRUD: controller / service / repository layers, DTOs, validation
+- [x] 3. Applications CRUD: controller / service / repository layers, DTOs, validation
 - [ ] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
 - [ ] 5. Status filter and follow-ups list
 - [ ] 6. Security: registration, login, JWT, per-user data isolation
@@ -51,6 +51,19 @@ Run the tests (no Docker needed, they use an in-memory H2 database):
 cd backend
 ./mvnw test
 ```
+
+## API
+
+| Method | Path                     | Description                    | Success |
+|--------|--------------------------|--------------------------------|---------|
+| GET    | `/api/applications`      | List my applications           | 200     |
+| GET    | `/api/applications/{id}` | Get one application            | 200     |
+| POST   | `/api/applications`      | Create an application          | 201     |
+| PUT    | `/api/applications/{id}` | Replace an application         | 200     |
+| DELETE | `/api/applications/{id}` | Delete an application          | 204     |
+
+> Until authentication is implemented (step 6), the caller is identified by a
+> temporary `X-User-Id` header.
 
 ## Troubleshooting
 
