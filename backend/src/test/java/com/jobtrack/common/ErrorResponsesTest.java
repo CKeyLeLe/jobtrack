@@ -7,11 +7,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.HttpStatus;
+import com.jobtrack.auth.SecurityConfig;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
@@ -20,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -28,6 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * avec le bon statut. Le frontend s'appuie sur ce format, il doit donc être testé.
  */
 @WebMvcTest(JobApplicationController.class)
+@Import(SecurityConfig.class)
+@WithMockUser
 class ErrorResponsesTest {
 
     private static final Long OWNER_ID = 1L;
@@ -38,6 +44,8 @@ class ErrorResponsesTest {
     private JobApplicationService service;
     @MockitoBean
     private CurrentUserProvider currentUser;
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @BeforeEach
     void authenticate() {
@@ -103,15 +111,16 @@ class ErrorResponsesTest {
                 .andExpect(jsonPath("$.detail").value("Job application 99 not found"));
     }
 
+    /** Erreur levée par un filtre de sécurité, hors du controller : même format malgré tout. */
     @Test
-    void missingUserIsUnauthorized() throws Exception {
-        when(currentUser.currentUserId())
-                .thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid X-User-Id header"));
-
+    @WithAnonymousUser
+    void anonymousRequestIsUnauthorized() throws Exception {
         mvc.perform(get("/api/applications"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("WWW-Authenticate"))
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.detail").value("Missing or invalid X-User-Id header"));
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.instance").value("/api/applications"));
     }
 
     @Test

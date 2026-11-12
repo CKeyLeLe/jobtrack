@@ -1,6 +1,10 @@
 package com.jobtrack.jobapplication;
 
 import com.jobtrack.auth.CurrentUserProvider;
+import com.jobtrack.auth.SecurityConfig;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import com.jobtrack.common.NotFoundException;
 import com.jobtrack.jobapplication.dto.JobApplicationRequest;
 import com.jobtrack.jobapplication.dto.JobApplicationResponse;
@@ -31,8 +35,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * @WebMvcTest ne charge que la couche web (controller, conversion JSON, validation).
  * Le service est remplacé par un mock : on teste le contrat HTTP, pas la logique métier.
+ * <p>
+ * On importe nos vraies règles de sécurité ; @WithMockUser simule un utilisateur déjà
+ * authentifié (la vérification du JWT est testée dans les tests d'intégration).
  */
 @WebMvcTest(JobApplicationController.class)
+@Import(SecurityConfig.class)
+@WithMockUser
 class JobApplicationControllerTest {
 
     private static final Long OWNER_ID = 1L;
@@ -43,6 +52,8 @@ class JobApplicationControllerTest {
     private JobApplicationService service;
     @MockitoBean
     private CurrentUserProvider currentUser;
+    @MockitoBean
+    private JwtDecoder jwtDecoder; // requis par la config resource server, jamais appelé ici
 
     @BeforeEach
     void authenticate() {

@@ -1,6 +1,10 @@
 spring:
   application:
     name: jobtrack
+  # Fichier local optionnel (non versionné) contenant les secrets de développement, ex. JWT_SECRET.
+  # Voir backend/.env.example. En production, les vraies variables d'environnement suffisent.
+  config:
+    import: optional:file:.env[.properties]
   # Connexion lue depuis des variables d'environnement (12-factor app).
   # Les valeurs après ":" sont des défauts pour le développement local avec docker compose.
   datasource:
@@ -8,12 +12,18 @@ spring:
     username: ${DB_USERNAME:jobtrack}
     password: ${DB_PASSWORD:jobtrack}
   jpa:
-    # Le schéma sera géré par des migrations versionnées (étape suivante),
-    # jamais généré automatiquement par Hibernate.
+    # Le schéma est géré par les migrations Flyway, jamais généré par Hibernate.
     hibernate:
       ddl-auto: validate
     # Désactive l'anti-pattern "Open Session In View" : les accès BDD restent dans la couche service.
     open-in-view: false
+
+jobtrack:
+  jwt:
+    # Aucun défaut : sans JWT_SECRET, l'application refuse de démarrer.
+    secret: ${JWT_SECRET:}
+    expiration: 1h
+    issuer: jobtrack
 
 management:
   endpoints:
