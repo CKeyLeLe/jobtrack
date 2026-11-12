@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -80,6 +81,29 @@ class JobApplicationControllerTest {
         when(service.findById(OWNER_ID, 99L)).thenThrow(new NotFoundException("Job application", 99L));
 
         mvc.perform(get("/api/applications/99")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void statusQueryParameterIsPassedToTheService() throws Exception {
+        when(service.findAll(OWNER_ID, ApplicationStatus.INTERVIEW)).thenReturn(List.of(response(7L)));
+
+        mvc.perform(get("/api/applications").param("status", "INTERVIEW"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(7));
+    }
+
+    @Test
+    void followUpsRouteIsNotMistakenForAnId() throws Exception {
+        when(service.findDueFollowUps(OWNER_ID)).thenReturn(List.of(response(3L)));
+
+        mvc.perform(get("/api/applications/follow-ups"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(3));
+    }
+
+    private static JobApplicationResponse response(Long id) {
+        return new JobApplicationResponse(id, "Acme", "Dev", ApplicationStatus.INTERVIEW,
+                LocalDate.of(2026, 11, 2), null, null, Instant.now(), Instant.now());
     }
 
     @Test

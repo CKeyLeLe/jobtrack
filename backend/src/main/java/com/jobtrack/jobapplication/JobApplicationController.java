@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -36,9 +37,19 @@ public class JobApplicationController {
         this.currentUser = currentUser;
     }
 
+    /**
+     * {@code GET /api/applications?status=INTERVIEW}. Spring convertit le texte en enum ;
+     * une valeur inconnue produit un 400 via le GlobalExceptionHandler.
+     */
     @GetMapping
-    public List<JobApplicationResponse> findAll() {
-        return service.findAll(currentUser.currentUserId());
+    public List<JobApplicationResponse> findAll(@RequestParam(required = false) ApplicationStatus status) {
+        return service.findAll(currentUser.currentUserId(), status);
+    }
+
+    /** Route littérale : Spring la préfère à "/{id}", il n'y a donc pas de conflit. */
+    @GetMapping("/follow-ups")
+    public List<JobApplicationResponse> findDueFollowUps() {
+        return service.findDueFollowUps(currentUser.currentUserId());
     }
 
     @GetMapping("/{id}")

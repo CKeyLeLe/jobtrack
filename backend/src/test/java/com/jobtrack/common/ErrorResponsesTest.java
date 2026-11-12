@@ -86,6 +86,13 @@ class ErrorResponsesTest {
     }
 
     @Test
+    void unknownStatusFilterIsABadRequest() throws Exception {
+        mvc.perform(get("/api/applications").param("status", "HIRED"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+    }
+
+    @Test
     void notFoundExplainsWhichResource() throws Exception {
         when(service.findById(OWNER_ID, 99L)).thenThrow(new NotFoundException("Job application", 99L));
 
@@ -109,7 +116,7 @@ class ErrorResponsesTest {
 
     @Test
     void unexpectedErrorDoesNotLeakInternals() throws Exception {
-        when(service.findAll(OWNER_ID)).thenThrow(new IllegalStateException("SELECT * FROM users -- secret"));
+        when(service.findAll(OWNER_ID, null)).thenThrow(new IllegalStateException("SELECT * FROM users -- secret"));
 
         mvc.perform(get("/api/applications"))
                 .andExpect(status().isInternalServerError())

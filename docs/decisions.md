@@ -82,3 +82,24 @@ Short record of the main technical choices and their trade-offs.
   instead of the whole object.
 - **Catch-all 500 handler**: logs the stack trace, returns a generic message.
   Internal details (SQL, class names) never reach the client.
+
+## 5. Status filter and follow-ups
+
+- **Filter as an optional query parameter** (`?status=INTERVIEW`) on the
+  collection, not a separate route: the standard REST way to narrow a list.
+  Spring converts the text to the enum; unknown values become a 400.
+- **Follow-ups as a dedicated read-only route** (`/follow-ups`): it is a
+  business view with its own rule, not just a filter.
+- **Business rule**: a follow-up is due when its date is today or earlier
+  *and* the application is still active (`APPLIED`, `INTERVIEW`, `OFFER`).
+  Rejected or withdrawn applications drop out automatically; their planned
+  date is kept as history instead of being erased.
+- **Most overdue first** (`followUpOn asc`), since the oldest is the most urgent.
+- **Injected `Clock`** instead of `LocalDate.now()`: tests freeze "today" and
+  stay deterministic whatever day they run. Known limit: "today" uses the
+  server time zone; per-user time zones would need a user setting.
+- **Derived queries while readable, JPQL `@Query` beyond**: the follow-up query
+  would make an unreadable method name.
+- **`id` as a tie-breaker in every sort**: stable ordering between calls.
+- **Existing indexes match these queries**: `(user_id, status)` and
+  `(user_id, follow_up_on)`, created in migration V2.

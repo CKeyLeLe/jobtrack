@@ -5,15 +5,19 @@ import com.jobtrack.jobapplication.dto.JobApplicationRequest;
 import com.jobtrack.jobapplication.dto.JobApplicationResponse;
 import com.jobtrack.user.User;
 import com.jobtrack.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,14 +36,50 @@ class JobApplicationServiceTest {
     private static final Long OWNER_ID = 1L;
     private static final LocalDate APPLIED_ON = LocalDate.of(2026, 11, 2);
 
+    /** Horloge figée au 12/11/2026 : le résultat ne dépend pas du jour d'exécution du test. */
+    private static final LocalDate TODAY = LocalDate.of(2026, 11, 12);
+    private static final Clock FIXED_CLOCK =
+            Clock.fixed(TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+
     @Mock
     private JobApplicationRepository applications;
     @Mock
     private UserRepository users;
-    @InjectMocks
+
     private JobApplicationService service;
 
     private final User owner = new User("alice@example.com", "hash");
+
+    @BeforeEach
+    void createService() {
+        service = new JobApplicationService(applications, users, FIXED_CLOCK);
+    }
+
+    @Test
+    void findAllWithoutStatusReturnsEverything() {
+        service.findAll(OWNER_ID, null);
+
+        verify(applications).findAllByUserIdOrderByAppliedOnDescIdDesc(OWNER_ID);
+    }
+
+    @Test
+    void findAllWithStatusUsesTheFilteredQuery() {
+        var interview = new JobApplication(owner, "Acme", "Dev", ApplicationStatus.INTERVIEW, APPLIED_ON);
+        when(applications.findAllByUserIdAndStatusOrderByAppliedOnDescIdDesc(OWNER_ID, ApplicationStatus.INTERVIEW))
+                .thenReturn(List.of(interview));
+
+        assertThat(service.findAll(OWNER_ID, ApplicationStatus.INTERVIEW))
+                .extracting(JobApplicationResponse::status)
+                .containsExactly(ApplicationStatus.INTERVIEW);
+    }
+
+    @Test
+    void dueFollowUpsUseTodayAndOnlyActiveStatuses() {
+        service.findDueFollowUps(OWNER_ID);
+
+        verify(applications).findFollowUpsDueBy(
+                OWNER_ID, Set.of(ApplicationStatus.APPLIED, ApplicationStatus.INTERVIEW, ApplicationStatus.OFFER), TODAY);
+    }
 
     @Test
     void createAttachesOwnerAndCleansInput() {

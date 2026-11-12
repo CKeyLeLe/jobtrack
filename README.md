@@ -23,7 +23,7 @@ follow-up reminders and notes.
 - [x] 2. Domain model: `User` and `JobApplication` entities, Flyway migrations
 - [x] 3. Applications CRUD: controller / service / repository layers, DTOs, validation
 - [x] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
-- [ ] 5. Status filter and follow-ups list
+- [x] 5. Status filter and follow-ups list
 - [ ] 6. Security: registration, login, JWT, per-user data isolation
 - [ ] 7. Unit tests (Mockito) and web tests (MockMvc)
 - [ ] 8. Angular frontend
@@ -56,7 +56,8 @@ cd backend
 
 | Method | Path                     | Description                    | Success |
 |--------|--------------------------|--------------------------------|---------|
-| GET    | `/api/applications`      | List my applications           | 200     |
+| GET    | `/api/applications`      | List my applications (optional `?status=`) | 200 |
+| GET    | `/api/applications/follow-ups` | Follow-ups due today or overdue, active applications only | 200 |
 | GET    | `/api/applications/{id}` | Get one application            | 200     |
 | POST   | `/api/applications`      | Create an application          | 201     |
 | PUT    | `/api/applications/{id}` | Replace an application         | 200     |

@@ -65,9 +65,45 @@ class JobApplicationRepositoryTest {
         em.persist(new JobApplication(bob, "Bob Corp", "Dev", ApplicationStatus.APPLIED, LocalDate.of(2026, 10, 1)));
         em.flush();
 
-        assertThat(repository.findAllByUserIdOrderByAppliedOnDesc(alice.getId()))
+        assertThat(repository.findAllByUserIdOrderByAppliedOnDescIdDesc(alice.getId()))
                 .extracting(JobApplication::getCompany)
                 .containsExactly("New Corp", "Old Corp");
+    }
+
+    @Test
+    void filtersByStatus() {
+        em.persist(new JobApplication(alice, "A", "Dev", ApplicationStatus.INTERVIEW, LocalDate.of(2026, 10, 1)));
+        em.persist(new JobApplication(alice, "B", "Dev", ApplicationStatus.APPLIED, LocalDate.of(2026, 10, 2)));
+        em.persist(new JobApplication(bob, "C", "Dev", ApplicationStatus.INTERVIEW, LocalDate.of(2026, 10, 3)));
+        em.flush();
+
+        assertThat(repository.findAllByUserIdAndStatusOrderByAppliedOnDescIdDesc(alice.getId(), ApplicationStatus.INTERVIEW))
+                .extracting(JobApplication::getCompany)
+                .containsExactly("A");
+    }
+
+    @Test
+    void dueFollowUpsKeepOnlyActiveApplicationsDueByTheDate() {
+        LocalDate today = LocalDate.of(2026, 11, 12);
+        followUp(alice, "Overdue", ApplicationStatus.APPLIED, today.minusDays(3));
+        followUp(alice, "Due today", ApplicationStatus.INTERVIEW, today);
+        followUp(alice, "Offer pending", ApplicationStatus.OFFER, today.minusDays(1));
+        followUp(alice, "Not yet", ApplicationStatus.APPLIED, today.plusDays(1));
+        followUp(alice, "No follow-up", ApplicationStatus.APPLIED, null);
+        followUp(alice, "Rejected", ApplicationStatus.REJECTED, today.minusDays(1));
+        followUp(alice, "Withdrawn", ApplicationStatus.WITHDRAWN, today.minusDays(1));
+        followUp(bob, "Bob's", ApplicationStatus.APPLIED, today.minusDays(1));
+        em.flush();
+
+        assertThat(repository.findFollowUpsDueBy(alice.getId(), ApplicationStatus.ACTIVE, today))
+                .extracting(JobApplication::getCompany)
+                .containsExactly("Overdue", "Offer pending", "Due today"); // les plus en retard d'abord
+    }
+
+    private void followUp(User owner, String company, ApplicationStatus status, LocalDate followUpOn) {
+        JobApplication application = new JobApplication(owner, company, "Dev", status, LocalDate.of(2026, 10, 1));
+        application.setFollowUpOn(followUpOn);
+        em.persist(application);
     }
 
     @Test

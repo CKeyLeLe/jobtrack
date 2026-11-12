@@ -8,6 +8,8 @@ import com.jobtrack.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -24,17 +26,31 @@ public class JobApplicationService {
 
     private final JobApplicationRepository applications;
     private final UserRepository users;
+    private final Clock clock;
 
     /** Injection par constructeur : dépendances explicites, final, testables sans Spring. */
-    public JobApplicationService(JobApplicationRepository applications, UserRepository users) {
+    public JobApplicationService(JobApplicationRepository applications, UserRepository users, Clock clock) {
         this.applications = applications;
         this.users = users;
+        this.clock = clock;
     }
 
-    public List<JobApplicationResponse> findAll(Long ownerId) {
-        return applications.findAllByUserIdOrderByAppliedOnDesc(ownerId).stream()
-                .map(JobApplicationResponse::from)
-                .toList();
+    /** @param status filtre optionnel ; null renvoie toutes les candidatures. */
+    public List<JobApplicationResponse> findAll(Long ownerId, ApplicationStatus status) {
+        List<JobApplication> result = status == null
+                ? applications.findAllByUserIdOrderByAppliedOnDescIdDesc(ownerId)
+                : applications.findAllByUserIdAndStatusOrderByAppliedOnDescIdDesc(ownerId, status);
+        return toResponses(result);
+    }
+
+    /** Relances à faire aujourd'hui ou en retard, pour les candidatures encore actives. */
+    public List<JobApplicationResponse> findDueFollowUps(Long ownerId) {
+        LocalDate today = LocalDate.now(clock);
+        return toResponses(applications.findFollowUpsDueBy(ownerId, ApplicationStatus.ACTIVE, today));
+    }
+
+    private static List<JobApplicationResponse> toResponses(List<JobApplication> list) {
+        return list.stream().map(JobApplicationResponse::from).toList();
     }
 
     public JobApplicationResponse findById(Long ownerId, Long id) {

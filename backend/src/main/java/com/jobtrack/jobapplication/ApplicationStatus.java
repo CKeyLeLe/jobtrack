@@ -1,5 +1,7 @@
 package com.jobtrack.jobapplication;
 
+import java.util.Set;
+
 /**
  * Étapes du suivi d'une candidature. Stockées en texte ({@code EnumType.STRING}) :
  * réordonner ou insérer une valeur ne corrompt pas les données existantes.
@@ -10,5 +12,11 @@ public enum ApplicationStatus {
     INTERVIEW,
     OFFER,
     REJECTED,
-    WITHDRAWN
+    WITHDRAWN;
+
+    /**
+     * Candidatures encore en cours : les seules pour lesquelles une relance a du sens.
+     * Une candidature refusée ou retirée sort des relances, même si une date était prévue.
+     */
+    public static final Set<ApplicationStatus> ACTIVE = Set.of(APPLIED, INTERVIEW, OFFER);
 }
