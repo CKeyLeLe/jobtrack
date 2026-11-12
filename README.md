@@ -24,8 +24,8 @@ follow-up reminders and notes.
 - [x] 3. Applications CRUD: controller / service / repository layers, DTOs, validation
 - [x] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
 - [x] 5. Status filter and follow-ups list
-- [ ] 6. Security: registration, login, JWT, per-user data isolation
-- [ ] 7. Unit tests (Mockito) and web tests (MockMvc)
+- [x] 6. Security: registration, login, JWT, per-user data isolation
+- [ ] 7. Test hardening: tests on real PostgreSQL (Testcontainers), JaCoCo coverage
 - [ ] 8. Angular frontend
 - [ ] 9. Full Docker Compose stack
 - [ ] 10. CI with GitHub Actions
@@ -40,8 +40,12 @@ ships the Maven Wrapper (`mvnw`).
 ```bash
 docker compose up -d          # start PostgreSQL
 cd backend
+cp .env.example .env          # then set JWT_SECRET (openssl rand -base64 32)
 ./mvnw spring-boot:run        # start the API on http://localhost:8080
 ```
+
+The API refuses to start without `JWT_SECRET`. In production, provide it (and
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) as environment variables.
 
 Health check: `http://localhost:8080/actuator/health`
 
@@ -54,17 +58,23 @@ cd backend
 
 ## API
 
-| Method | Path                     | Description                    | Success |
-|--------|--------------------------|--------------------------------|---------|
-| GET    | `/api/applications`      | List my applications (optional `?status=`) | 200 |
-| GET    | `/api/applications/follow-ups` | Follow-ups due today or overdue, active applications only | 200 |
-| GET    | `/api/applications/{id}` | Get one application            | 200     |
-| POST   | `/api/applications`      | Create an application          | 201     |
-| PUT    | `/api/applications/{id}` | Replace an application         | 200     |
-| DELETE | `/api/applications/{id}` | Delete an application          | 204     |
+| Method | Path                             | Description                                         | Success |
+|--------|----------------------------------|-----------------------------------------------------|---------|
+| POST   | `/api/auth/register`             | Create an account, returns a token                  | 201     |
+| POST   | `/api/auth/login`                | Log in, returns a token                             | 200     |
+| GET    | `/api/applications`              | List my applications (optional `?status=`)          | 200     |
+| GET    | `/api/applications/follow-ups`   | Follow-ups due today or overdue, active only        | 200     |
+| GET    | `/api/applications/{id}`         | Get one application                                 | 200     |
+| POST   | `/api/applications`              | Create an application                               | 201     |
+| PUT    | `/api/applications/{id}`         | Replace an application                              | 200     |
+| DELETE | `/api/applications/{id}`         | Delete an application                               | 204     |
 
-> Until authentication is implemented (step 6), the caller is identified by a
-> temporary `X-User-Id` header.
+Every `/api/applications` route requires `Authorization: Bearer <accessToken>`.
+Tokens are valid for one hour:
+
+```json
+{ "accessToken": "eyJhbGciOiJIUzI1NiJ9...", "tokenType": "Bearer", "expiresIn": 3600 }
+```
 
 Errors follow [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807)
 (`application/problem+json`). Validation errors list each invalid field:

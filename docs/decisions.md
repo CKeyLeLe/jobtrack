@@ -103,3 +103,39 @@ Short record of the main technical choices and their trade-offs.
 - **`id` as a tie-breaker in every sort**: stable ordering between calls.
 - **Existing indexes match these queries**: `(user_id, status)` and
   `(user_id, follow_up_on)`, created in migration V2.
+
+## 6. Security
+
+- **Stateless JWT**: no server session; each request carries
+  `Authorization: Bearer <token>`. Scales horizontally, fits a SPA client.
+- **Spring Security resource server** validates tokens (signature, `exp`,
+  `iss`) with its own filter, instead of a hand-written filter: less custom
+  security code to get wrong.
+- **HS256 with one secret**: the same application issues and verifies tokens.
+  RS256 (private/public key pair) would be the choice with several services.
+- **Secret never committed**: read from `JWT_SECRET` (environment or a local,
+  git-ignored `backend/.env`). Typed `@ConfigurationProperties` validated at
+  startup: the app refuses to start with a missing or too short key.
+- **Token content**: `sub` = user id (stable), `email`, `iat`, `exp`, `iss`.
+  JWTs are signed, not encrypted: nothing secret goes inside.
+- **Deny by default**: `anyRequest().authenticated()`; only register, login and
+  health are public, so a new route is protected unless explicitly opened.
+- **CSRF disabled** on purpose: CSRF abuses cookies sent automatically by the
+  browser; a bearer token is added explicitly by the client.
+- **Passwords**: BCrypt through `DelegatingPasswordEncoder` (`{bcrypt}` prefix
+  allows a future algorithm change). 8-72 characters: BCrypt ignores bytes
+  beyond 72. Request DTOs mask passwords in `toString()`.
+- **Login delegated to `DaoAuthenticationProvider`**, which also hashes a dummy
+  password for unknown emails (timing-attack protection). Wrong password and
+  unknown email return the same 401.
+- **Registration returns 409 for a used email**, accepted trade-off: it reveals
+  that the account exists. The concurrent-insert race is caught via the unique
+  constraint. Registration logs the user in directly (returns a token).
+- **401 in ProblemDetail format** from a custom entry point: authentication
+  fails in a servlet filter, before controllers, so `@RestControllerAdvice`
+  never sees it.
+- **`CurrentUserProvider` paid off**: switching from the temporary header to
+  JWT changed one implementation class; controllers and services were untouched.
+- **Known limits** (out of scope for V1): no refresh token (one-hour expiry,
+  then log in again), no server-side logout or revocation (the client drops
+  the token), no rate limiting on login.
