@@ -43,18 +43,36 @@ follow-up reminders and notes.
 - [x] 6. Security: registration, login, JWT, per-user data isolation
 - [x] 7. Test hardening: tests on real PostgreSQL (Testcontainers), JaCoCo coverage
 - [x] 8. Angular frontend
-- [ ] 9. Full Docker Compose stack
+- [x] 9. Full Docker Compose stack
 - [ ] 10. CI with GitHub Actions
 
 Design choices and trade-offs are recorded in [docs/decisions.md](docs/decisions.md).
 
-## Run locally
+## Run with Docker (quickest)
+
+Requirements: Docker only.
+
+```bash
+cp backend/.env.example backend/.env    # then set JWT_SECRET (openssl rand -base64 32)
+docker compose up -d --build            # open http://localhost:8000
+```
+
+```
+browser ──► nginx :8000 ──┬── Angular static files
+                          └── /api ──► Spring Boot API ──► PostgreSQL
+```
+
+Only nginx is published. The API is reachable only through nginx, and
+PostgreSQL only from this machine. Both application containers run as
+non-root users.
+
+## Run for development
 
 Requirements: JDK 21+, Node.js 22+, Docker. Maven does not need to be installed:
 the project ships the Maven Wrapper (`mvnw`).
 
 ```bash
-docker compose up -d          # start PostgreSQL
+docker compose up -d db       # start PostgreSQL only
 cd backend
 cp .env.example .env          # then set JWT_SECRET (openssl rand -base64 32)
 ./mvnw spring-boot:run        # start the API on http://localhost:8080

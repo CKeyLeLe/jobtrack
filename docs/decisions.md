@@ -196,7 +196,47 @@ Short record of the main technical choices and their trade-offs.
   load, each page downloaded on first visit.
 - **Plain CSS with variables**, no UI library: small bundle, light and dark
   themes, table rows turn into cards on phones.
+- **No critical-CSS inlining** (`inlineCritical: false`): Angular loads the
+  stylesheet through an inline script, which the production Content Security
+  Policy blocks (the page rendered unstyled). The stylesheet is under 2 kB, so
+  the strict CSP wins.
 - **Tests on logic, not markup**: interceptor, session store, error mapping,
   validators and date helpers (Vitest). The full flow was checked manually in
   a browser against the real API; automated end-to-end tests (Playwright)
   are a possible next step.
+
+## 9. Docker Compose stack
+
+- **Multi-stage Dockerfiles**: the build stage has the JDK, Maven or Node.js;
+  the runtime image only has a JRE or nginx. No compiler, sources or build
+  cache in production images (frontend image: about 80 MB).
+- **Dependencies copied before sources**: Docker caches the dependency layer,
+  so a code change does not re-download Maven or npm packages.
+- **Spring Boot layered jar** (`jarmode=tools extract --layers`): dependencies,
+  loader and application code in separate image layers; a code change only
+  ships the small application layer.
+- **Tests are not run during the image build**: database tests need Docker
+  (Testcontainers). The CI pipeline runs them before building images.
+- **Non-root containers**: a dedicated `jobtrack` user for the API, the
+  `nginx-unprivileged` image for the frontend.
+- **nginx as single entry point**: serves Angular, forwards `/api` to the
+  backend over the internal Docker network. One origin, so no CORS; only nginx
+  is published, the API is not reachable from outside; PostgreSQL is bound to
+  `127.0.0.1` only.
+- **SPA fallback** (`try_files ... /index.html`): deep links such as
+  `/applications/3/edit` work after a refresh.
+- **Caching**: hashed assets cached for a year (`immutable`), `index.html`
+  never cached, so a new deployment is picked up at once. Gzip enabled.
+- **Security headers** on every response: Content-Security-Policy (scripts
+  only from the same origin, no framing), `X-Content-Type-Options`,
+  `Referrer-Policy`, `X-Frame-Options`, nginx version hidden.
+- **Startup order through health checks**: the API waits for PostgreSQL to
+  accept connections, nginx waits for `/actuator/health` to report `UP`.
+- **Secrets at runtime, never in images**: `JWT_SECRET` comes from the
+  git-ignored `backend/.env` through `env_file`; `.dockerignore` excludes it
+  from the build context. Verified: the image contains no `.env` and no secret
+  in its environment.
+- **`MaxRAMPercentage=75`**: the JVM sizes its heap from the container's
+  memory limit, not from the host's.
+- **Known limits**: HTTP only (TLS would be terminated by a reverse proxy or
+  the hosting platform); database credentials are development defaults.
