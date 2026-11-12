@@ -1,5 +1,7 @@
 # JobTrack
 
+[![CI](https://github.com/CKeyLeLe/jobtrack/actions/workflows/ci.yml/badge.svg)](https://github.com/CKeyLeLe/jobtrack/actions/workflows/ci.yml)
+
 Web application for tracking job applications: companies, positions, status,
 follow-up reminders and notes.
 
