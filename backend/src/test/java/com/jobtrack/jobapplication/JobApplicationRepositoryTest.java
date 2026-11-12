@@ -45,6 +45,9 @@ class JobApplicationRepositoryTest {
 
         JobApplication reloaded = repository.findById(id).orElseThrow();
 
+        // Régression : la valeur en mémoire après INSERT doit égaler celle relue en base.
+        assertThat(reloaded.getCreatedAt()).isEqualTo(application.getCreatedAt());
+
         assertThat(reloaded.getCompany()).isEqualTo("Acme");
         assertThat(reloaded.getJobTitle()).isEqualTo("Java Developer");
         assertThat(reloaded.getStatus()).isEqualTo(ApplicationStatus.APPLIED);

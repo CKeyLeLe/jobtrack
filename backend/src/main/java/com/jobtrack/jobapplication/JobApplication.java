@@ -1,5 +1,6 @@
 package com.jobtrack.jobapplication;
 
+import com.jobtrack.common.Timestamps;
 import com.jobtrack.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -82,13 +83,13 @@ public class JobApplication {
 
     @PrePersist
     void onCreate() {
-        createdAt = Instant.now();
+        createdAt = Timestamps.now();
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void onUpdate() {
-        updatedAt = Instant.now();
+        updatedAt = Timestamps.now();
     }
 
     public Long getId() {
