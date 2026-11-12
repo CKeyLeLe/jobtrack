@@ -20,7 +20,7 @@ follow-up reminders and notes.
 ## Roadmap
 
 - [x] 1. Project skeleton: Spring Boot API, PostgreSQL via Docker Compose
-- [ ] 2. Domain model: `User` and `JobApplication` entities, Flyway migrations
+- [x] 2. Domain model: `User` and `JobApplication` entities, Flyway migrations
 - [ ] 3. Applications CRUD: controller / service / repository layers, DTOs, validation
 - [ ] 4. Error handling: centralized `@RestControllerAdvice`, RFC 7807 problem details
 - [ ] 5. Status filter and follow-ups list
@@ -29,6 +29,8 @@ follow-up reminders and notes.
 - [ ] 8. Angular frontend
 - [ ] 9. Full Docker Compose stack
 - [ ] 10. CI with GitHub Actions
+
+Design choices and trade-offs are recorded in [docs/decisions.md](docs/decisions.md).
 
 ## Run locally
 
