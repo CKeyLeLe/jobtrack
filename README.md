@@ -49,3 +49,13 @@ Run the tests (no Docker needed, they use an in-memory H2 database):
 cd backend
 ./mvnw test
 ```
+
+## Troubleshooting
+
+**Windows: `Unable to establish loopback connection` at startup.** Java NIO
+creates a Unix domain socket in the temp folder, which fails when the Windows
+user name contains non-ASCII characters (e.g. `é`). Point it to an ASCII folder:
+
+```powershell
+setx JDK_JAVA_OPTIONS "-Djdk.net.unixdomain.tmpdir=C:\Temp"
+```
