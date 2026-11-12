@@ -1,6 +1,8 @@
 package com.jobtrack.common;
 
+import com.jobtrack.auth.EmailAlreadyUsedException;
 import org.slf4j.Logger;
+import org.springframework.security.core.AuthenticationException;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -56,6 +58,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleNotFound(NotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Resource not found");
+        return problem;
+    }
+
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    public ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Email already used");
+        return problem;
+    }
+
+    /**
+     * Échec de connexion. Même message que l'email soit inconnu ou le mot de passe faux :
+     * un attaquant ne peut pas savoir quels emails ont un compte.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthenticationFailure(AuthenticationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        problem.setTitle("Unauthorized");
         return problem;
     }
 
