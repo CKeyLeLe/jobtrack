@@ -1,0 +1,24 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Angular (à venir)
+node_modules/
+dist/
+.angular/
+
+# Environnement local et secrets
+.env
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

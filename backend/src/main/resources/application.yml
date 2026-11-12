@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: jobtrack
+  # Connexion lue depuis des variables d'environnement (12-factor app).
+  # Les valeurs après ":" sont des défauts pour le développement local avec docker compose.
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/jobtrack}
+    username: ${DB_USERNAME:jobtrack}
+    password: ${DB_PASSWORD:jobtrack}
+  jpa:
+    # Le schéma sera géré par des migrations versionnées (étape suivante),
+    # jamais généré automatiquement par Hibernate.
+    hibernate:
+      ddl-auto: validate
+    # Désactive l'anti-pattern "Open Session In View" : les accès BDD restent dans la couche service.
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

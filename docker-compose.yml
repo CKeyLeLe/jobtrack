@@ -1,0 +1,22 @@
+# Étape 1 : uniquement la base de données, pour développer l'API en local.
+# Le backend et le frontend seront ajoutés ici dans une étape ultérieure.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: jobtrack-db
+    environment:
+      POSTGRES_DB: jobtrack
+      POSTGRES_USER: jobtrack
+      POSTGRES_PASSWORD: jobtrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - jobtrack-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobtrack -d jobtrack"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  jobtrack-data:
