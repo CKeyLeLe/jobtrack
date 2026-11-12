@@ -1,0 +1,75 @@
+<div class="page-header">
+  <h1>My applications</h1>
+  <a class="btn btn-primary" routerLink="/applications/new">New application</a>
+</div>
+
+<div class="toolbar">
+  <label for="status-filter">Status</label>
+  <select id="status-filter" [value]="status() ?? ''" (change)="filterBy($any($event.target).value)">
+    <option value="">All statuses</option>
+    @for (option of statusOptions; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+    }
+  </select>
+</div>
+
+@if (error(); as message) {
+  <p class="alert alert-error" role="alert">{{ message }}</p>
+}
+
+@if (loading()) {
+  <p class="muted">Loading…</p>
+} @else if (applications().length === 0) {
+  <div class="empty-state">
+    @if (status()) {
+      <p>No application with the status “{{ statusLabel(status()!) }}”.</p>
+      <button class="btn" type="button" (click)="filterBy('')">Show all applications</button>
+    } @else {
+      <p>No application yet. Add the first one to start tracking.</p>
+      <a class="btn btn-primary" routerLink="/applications/new">New application</a>
+    }
+  </div>
+} @else {
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Company</th>
+          <th scope="col">Position</th>
+          <th scope="col">Status</th>
+          <th scope="col">Applied</th>
+          <th scope="col">Follow-up</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (application of applications(); track application.id) {
+          <tr>
+            <td class="strong cell-title">{{ application.company }}</td>
+            <td data-label="Position">{{ application.jobTitle }}</td>
+            <td data-label="Status">
+              <span class="badge" [attr.data-status]="application.status">{{ statusLabel(application.status) }}</span>
+            </td>
+            <td data-label="Applied">{{ application.appliedOn | date: 'mediumDate' }}</td>
+            <td data-label="Follow-up">
+              @if (application.followUpOn) {
+                <span>
+                  {{ application.followUpOn | date: 'mediumDate' }}
+                  @if (isFollowUpDue(application)) {
+                    <span class="badge badge-due">Due</span>
+                  }
+                </span>
+              } @else {
+                <span class="muted">—</span>
+              }
+            </td>
+            <td class="actions">
+              <a class="btn btn-small" [routerLink]="['/applications', application.id, 'edit']">Edit</a>
+              <button class="btn btn-small btn-danger" type="button" (click)="delete(application)">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

@@ -1,0 +1,71 @@
+<div class="page-header">
+  <h1>{{ isEdit() ? 'Edit application' : 'New application' }}</h1>
+</div>
+
+@if (error(); as message) {
+  <p class="alert alert-error" role="alert">{{ message }}</p>
+}
+
+@if (loading()) {
+  <p class="muted">Loading…</p>
+} @else {
+  <form class="card form-grid" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field">
+      <label for="company">Company</label>
+      <input id="company" type="text" formControlName="company" autocomplete="organization" />
+      @if (errorMessage(form.controls.company); as message) {
+        <p class="field-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="jobTitle">Position</label>
+      <input id="jobTitle" type="text" formControlName="jobTitle" />
+      @if (errorMessage(form.controls.jobTitle); as message) {
+        <p class="field-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="status">Status</label>
+      <select id="status" formControlName="status">
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="appliedOn">Applied on</label>
+      <input id="appliedOn" type="date" formControlName="appliedOn" [max]="today" />
+      @if (errorMessage(form.controls.appliedOn); as message) {
+        <p class="field-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label for="followUpOn">Follow up on <span class="optional">(optional)</span></label>
+      <input id="followUpOn" type="date" formControlName="followUpOn" />
+      @if (errorMessage(form.controls.followUpOn); as message) {
+        <p class="field-error">{{ message }}</p>
+      } @else {
+        <p class="hint">The application appears in Follow-ups from this date.</p>
+      }
+    </div>
+
+    <div class="field field-wide">
+      <label for="notes">Notes <span class="optional">(optional)</span></label>
+      <textarea id="notes" rows="4" formControlName="notes"></textarea>
+      @if (errorMessage(form.controls.notes); as message) {
+        <p class="field-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="form-actions field-wide">
+      <a class="btn" routerLink="/applications">Cancel</a>
+      <button class="btn btn-primary" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Saving…' : isEdit() ? 'Save changes' : 'Add application' }}
+      </button>
+    </div>
+  </form>
+}

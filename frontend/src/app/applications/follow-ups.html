@@ -1,0 +1,42 @@
+<div class="page-header">
+  <h1>Follow-ups</h1>
+</div>
+<p class="muted lead">Applications still in progress whose follow-up date has come. Most overdue first.</p>
+
+@if (error(); as message) {
+  <p class="alert alert-error" role="alert">{{ message }}</p>
+}
+
+@if (loading()) {
+  <p class="muted">Loading…</p>
+} @else if (followUps().length === 0) {
+  <div class="empty-state">
+    <p>You're all caught up: no follow-up to send today.</p>
+    <a class="btn" routerLink="/applications">See all applications</a>
+  </div>
+} @else {
+  <ul class="follow-up-list">
+    @for (application of followUps(); track application.id) {
+      <li class="card follow-up">
+        <div class="follow-up-main">
+          <p class="follow-up-title">
+            <span class="strong">{{ application.company }}</span> · {{ application.jobTitle }}
+          </p>
+          <p class="follow-up-meta">
+            <span class="badge" [attr.data-status]="application.status">{{ statusLabel(application.status) }}</span>
+            <span class="badge badge-due">{{ dueLabel(application) }}</span>
+            <span class="muted">Applied {{ application.appliedOn | date: 'mediumDate' }}</span>
+          </p>
+          @if (application.notes) {
+            <p class="follow-up-notes">{{ application.notes }}</p>
+          }
+        </div>
+        <div class="follow-up-actions">
+          <button class="btn btn-small btn-primary" type="button" (click)="markDone(application)">Done</button>
+          <button class="btn btn-small" type="button" (click)="snooze(application)">Snooze 7 days</button>
+          <a class="btn btn-small" [routerLink]="['/applications', application.id, 'edit']">Edit</a>
+        </div>
+      </li>
+    }
+  </ul>
+}
