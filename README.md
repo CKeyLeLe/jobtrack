@@ -44,7 +44,7 @@ follow-up reminders and notes.
 - [x] 7. Test hardening: tests on real PostgreSQL (Testcontainers), JaCoCo coverage
 - [x] 8. Angular frontend
 - [x] 9. Full Docker Compose stack
-- [ ] 10. CI with GitHub Actions
+- [x] 10. CI with GitHub Actions
 
 Design choices and trade-offs are recorded in [docs/decisions.md](docs/decisions.md).
 
@@ -145,6 +145,19 @@ Errors follow [RFC 7807](https://www.rfc-editor.org/rfc/rfc7807)
   ]
 }
 ```
+
+## Continuous integration
+
+Every push and pull request runs [the CI pipeline](.github/workflows/ci.yml):
+
+| Job      | What it checks                                                          |
+|----------|-------------------------------------------------------------------------|
+| Backend  | `mvnw verify`: all tests on PostgreSQL (Testcontainers), 90% coverage gate, coverage report as artifact |
+| Frontend | `npm ci`, unit tests (Vitest), production build                         |
+| Docker   | Runs after both: builds the images, starts the full stack, runs [an end-to-end smoke test](scripts/smoke-test.sh) through nginx |
+
+Dependabot opens weekly update pull requests (Maven, npm, Docker images,
+GitHub Actions), each one checked by the same pipeline.
 
 ## Troubleshooting
 

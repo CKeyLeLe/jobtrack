@@ -240,3 +240,28 @@ Short record of the main technical choices and their trade-offs.
   memory limit, not from the host's.
 - **Known limits**: HTTP only (TLS would be terminated by a reverse proxy or
   the hosting platform); database credentials are development defaults.
+
+## 10. Continuous integration
+
+- **GitHub Actions, three jobs**: backend and frontend run in parallel; the
+  Docker job runs only when both passed (`needs`), so images are only built
+  from tested code.
+- **Same commands as on a developer machine** (`mvnw verify`, `npm test`,
+  `docker compose up`): the pipeline proves the README instructions work.
+- **Real PostgreSQL in CI for free**: GitHub-hosted runners have Docker, so
+  Testcontainers works unchanged.
+- **End-to-end smoke test** (`scripts/smoke-test.sh`) against the running
+  stack: headers, 401 without a token, registration, data round trip through
+  nginx → API → PostgreSQL. Shared by CI and local use, and verified to fail
+  when the stack is unreachable.
+- **Throwaway secret per run**: generated with `openssl`, never stored in the
+  repository or in GitHub secrets.
+- **Least privilege**: `permissions: contents: read`; no push, no deployment.
+- **Fast feedback**: Maven and npm caches; `concurrency` cancels outdated runs
+  on the same branch.
+- **Diagnosability**: coverage summary on the run page, HTML report as an
+  artifact, container logs printed when the stack fails.
+- **Dependabot** keeps Maven, npm, Docker base images and Actions up to date,
+  each update validated by this pipeline.
+- **Not done (no hosting target yet)**: publishing images to a registry and
+  deploying (continuous delivery).
