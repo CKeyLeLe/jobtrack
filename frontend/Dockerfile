@@ -14,7 +14,7 @@ RUN npm run build
 
 # ---- Stage 2: static files served by nginx (no Node.js at runtime) ----
 # The "unprivileged" image runs nginx as a non-root user, listening on 8080.
-FROM nginxinc/nginx-unprivileged:1.28-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist/frontend/browser/ /usr/share/nginx/html/
