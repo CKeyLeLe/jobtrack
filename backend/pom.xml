@@ -44,6 +44,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Migrations de schéma versionnées, appliquées automatiquement au démarrage -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- Depuis Flyway 10, le support de chaque SGBD est un module séparé -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
         <!-- Driver JDBC PostgreSQL, nécessaire seulement à l'exécution -->
         <dependency>
             <groupId>org.postgresql</groupId>
